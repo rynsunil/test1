@@ -1,20 +1,27 @@
-# File: azure-pipelines.yml
-parameters:
-- name: image
-  displayName: Pool Image
-  type: string
-  default: ubuntu-latest
-  values:
-  - windows-latest
-  - ubuntu-latest
-  - macOS-latest
+trigger:
+- main
 
-trigger: none
+strategy:
+  matrix:
+    jdk10_linux:
+      imageName: "ubuntu-latest"
+      jdkVersion: "1.10"
+    jdk11_windows:
+      imageName: "windows-latest"
+      jdkVersion: "1.11"
+  maxParallel: 2
 
-jobs:
-- job: build
-  displayName: build
-  pool: 
-    vmImage: ${{ parameters.image }}
-  steps:
-  - script: echo The image parameter is ${{ parameters.image }}```
+pool:
+  vmImage: $(imageName)
+
+steps:
+- task: Maven@3
+  inputs:
+    mavenPomFile: "pom.xml"
+    mavenOptions: "-Xmx3072m"
+    javaHomeOption: "JDKVersion"
+    jdkVersionOption: $(jdkVersion)
+    jdkArchitectureOption: "x64"
+    publishJUnitResults: true
+    testResultsFiles: "**/TEST-*.xml"
+    goals: "package"
